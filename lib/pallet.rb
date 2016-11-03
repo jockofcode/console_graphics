@@ -1,5 +1,3 @@
-
-
 class Pallet
   attr_accessor :pallet
   def self.load_from_file(filename)
