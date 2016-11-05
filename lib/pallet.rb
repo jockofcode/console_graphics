@@ -1,3 +1,6 @@
+require 'curses'
+require 'yaml'
+
 class Pallet
   attr_accessor :pallet
 
@@ -10,12 +13,16 @@ class Pallet
       File.open(filename,"w") {|f| f << {}.to_yaml }  
     end
 
-    p = self.class.new
+    p = new
     p.pallet = YAML.load(File.read(filename))
+
+    p
   end
 
   def save(filename)
       File.open(filename,"w") {|f| f << @pallet.to_yaml }  
+
+      true
   end
 
   def initialize
@@ -24,13 +31,20 @@ class Pallet
 
   def add_color(name, fg, bg, options = {create_new_index: true})
     existing_slot = find_slot_by_name(name)
+    existing_index = find_slots_by_color_pair(fg, bg)
+    .map{|slot| 
+      slot.last[:index] 
+    }
+    .uniq
+    .first
+
     if existing_slot
-      existing_slot[:fg] = fg
-      existing_slot[:bg] = bg
-      return name
+        existing_slot[:index] = existing_index if existing_index
+        existing_slot[:fg] = fg
+        existing_slot[:bg] = bg
+        return name
     end
 
-    existing_index = find_slots_by_color_pair(fg, bg).map{|slot| slot[:index] }.uniq.first
 
     if existing_index
       @pallet[name] = {index: existing_index, bg: bg, fg: fg}
@@ -42,9 +56,10 @@ class Pallet
     if next_index == nil || options[:create_new_index] != true
       puts "No slots left for color"
       @pallet[name] = {index: nil, bg: bg, fg: fg}
-      return
+      return name
     else
       @pallet[name] = {index: next_index, bg: bg, fg: fg}
+      return name
     end
   end
 
@@ -58,6 +73,22 @@ class Pallet
     end
 
     color_slots.each{|slot| slot.delete }
+
+    return color_slots
+  end
+
+  def remove_index(color)
+    if color.is_a?(Numeric)
+      color_slots = find_slots_by_index(color)
+    elsif color.is_a?(String)
+      color_slots = [find_slot_by_name(color)].compact
+    elsif color.is_a?(Array)
+      color_slots = find_slots_by_color_pair(*color)
+    end
+
+    color_slots.each{|slot| slot.last[:index] = nil }
+
+    return color_slots
   end
 
   def find_slot_by_name(name)
