@@ -21,7 +21,6 @@ class Pallet
 
   def save(filename)
       File.open(filename,"w") {|f| f << @pallet.to_yaml }  
-
       true
   end
 
@@ -31,23 +30,17 @@ class Pallet
 
   def add_color(name, fg, bg, options = {create_new_index: true})
     existing_slot = find_slot_by_name(name)
-    existing_index = find_slots_by_color_pair(fg, bg)
-    .map{|slot| 
-      slot.last[:index] 
-    }
-    .uniq
-    .first
+    existing_index = find_slots_by_color_pair(fg, bg).map{|slot| slot.last[:index] }.uniq.first
+    next_index = ((1..255).to_a - @pallet.map{|k,v| v[:index]}).sort.first
 
     if existing_slot
-        existing_slot[:index] = existing_index if existing_index
-        existing_slot[:fg] = fg
-        existing_slot[:bg] = bg
-        return name
+      remove_color(name)
+      @pallet[name] = {index: next_index, fg: fg, bg: bg}
+      return name
     end
 
-
     if existing_index
-      @pallet[name] = {index: existing_index, bg: bg, fg: fg}
+      @pallet[name] = {index: existing_index, fg: fg, bg: bg}
       return name
     end
 
@@ -55,10 +48,10 @@ class Pallet
 
     if next_index == nil || options[:create_new_index] != true
       puts "No slots left for color"
-      @pallet[name] = {index: nil, bg: bg, fg: fg}
+      @pallet[name] = {index: nil, fg: fg, bg: bg}
       return name
     else
-      @pallet[name] = {index: next_index, bg: bg, fg: fg}
+      @pallet[name] = {index: next_index, fg: fg, bg: bg}
       return name
     end
   end
@@ -71,7 +64,6 @@ class Pallet
     elsif color.is_a?(Array)
       color_slots = find_slots_by_color_pair(*color)
     end
-
     color_slots.each{|slot| slot.delete }
 
     return color_slots
@@ -85,7 +77,6 @@ class Pallet
     elsif color.is_a?(Array)
       color_slots = find_slots_by_color_pair(*color)
     end
-
     color_slots.each{|slot| slot.last[:index] = nil }
 
     return color_slots
