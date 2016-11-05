@@ -7,6 +7,12 @@ class Pallet
   def get_active_curses_pallet
     @pallet.select{|k,v| v[:index] }.map{|k,v| [v[:index],v[:fg], v[:bg]] }.uniq
   end
+
+  def set_active_pallet
+    get_active_curses_pallet.each do |color_index_and_pair|
+      Curses.init_pair(*color_index_and_pair)
+    end
+  end
   
   def self.load_from_file(filename)
     if !File.exists?(filename)
