@@ -40,7 +40,7 @@ class ConsoleAccess
       if block_given? 
         quit = (yield(main_window, @events)==:quit ? true : false)
       else
-        quit = (demo(main_window, @events)==:quit ? true : false)
+        quit = (demo==:quit ? true : false)
       end
 
       break if quit
@@ -52,7 +52,7 @@ class ConsoleAccess
     @main_window = nil
   end
 
-  def demo(main_window, events)
+  def demo
     @last_coords ||= [0,0] 
     event = events.shift
     if event
@@ -91,7 +91,6 @@ class ConsoleAccess
     else
       raise "datatype not anticipated: #{next_byte.class.to_s}"
     end
-    File.open("~event.yml","a"){|f| f << "key read (#{next_byte.class.to_s}): #{next_byte.to_yaml}" } if next_byte
     next_byte
   end
 
@@ -130,14 +129,14 @@ class ConsoleAccess
         event.data.char = keys.first
       end
       @events << event
-     #file.open("~event.yml","a"){|f| f << "count: #{@events.count}\n" + event.to_yaml }
+      File.open("~event.yml","a"){|f| f << "count: #{@events.count}\n" + event.to_yaml }
     end
   end
 
   def setup_screen
     Curses.init_screen 
     Curses.start_color 
-    main_window.timeout= 0 #nodelay = 1
+    main_window.timeout= 0
   end
 
   def setup_keyboard
@@ -172,9 +171,6 @@ class ConsoleAccess
       Curses::ALL_MOUSE_EVENTS|
       Curses::REPORT_MOUSE_POSITION
     )
-
-    #Curses.crmode # mouse?
-   #Curses.delay=0
   end
 
   def setup_pallet(pallet = Pallet.load_from_file("pallet.yml"))
