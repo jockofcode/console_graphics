@@ -36,7 +36,7 @@ class ConsoleAccess
     @current_pallet = Pallet.load_from_file("pallet.yml")
     quit = false
     loop do
-      check_for_key_mouse_event
+      check_for_event
       if block_given? 
         quit = (yield(main_window, @events)==:quit ? true : false)
       else
@@ -56,9 +56,9 @@ class ConsoleAccess
     @last_coords ||= [0,0] 
     event = events.shift
     if event
+      File.open("~event.yml","a"){|f| f << "count: #{@events.count}\n" + event.to_yaml }
       @last_coords = [event.data.lines,event.data.cols] if event.type == :mouse && event.method == :button_down
-      File.open("~event.yml","a"){|f| f << event.to_yaml }
-      quit = true if [13,3,26].include?(event.data.char)
+      quit = true if [13,3,26].include?(event.data.char) # Ctrl<C>, Ctrl<Z>, Enter
     end
 
     main_window.setpos(*@last_coords)
@@ -94,7 +94,7 @@ class ConsoleAccess
     next_byte
   end
 
-  def check_for_key_mouse_event 
+  def check_for_event 
     keys = []
     keys << read_key_byte # If I get input from Curses.getch, it pauses on <esc>
     if keys.last == 27
@@ -124,12 +124,15 @@ class ConsoleAccess
         event.method = keys[3]
         event.data.lines = keys[4]
         event.data.cols = keys[5]
+      elsif keys[0] == 410
+        event.type = :screen
+        current_screen_size = [Curses.lines,Curses.cols]
+        event.data.size = current_screen_size.dup
       else
         event.type = :keyboard
         event.data.char = keys.first
       end
       @events << event
-      File.open("~event.yml","a"){|f| f << "count: #{@events.count}\n" + event.to_yaml }
     end
   end
 
