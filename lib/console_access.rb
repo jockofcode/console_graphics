@@ -17,13 +17,18 @@ class ConsoleAccess
         new_type
       when :mouse
         new_type
+      when :screen
+        new_type
       else
         raise "unknown event type: #{new_type}"
       end
     end
   end
 
+  attr_accessor :main_window, :current_pallet, :events
+
   def initialize
+    @print_char = "#"
   end
 
   def run_loop
@@ -58,7 +63,7 @@ class ConsoleAccess
 
     main_window.setpos(*@last_coords)
     main_window.color_set(1)
-    main_window.addstr("#")
+    main_window.addstr(@print_char)
     main_window.color_set(0)
 
     main_window.setpos(Curses.lines - 1, Curses.cols / 2)
@@ -77,23 +82,37 @@ class ConsoleAccess
     @main_window
   end
 
+  def read_key_byte
+    next_byte = main_window.getch
+    if next_byte.class == Fixnum
+    elsif next_byte.class == String
+      next_byte = next_byte.bytes.first
+    elsif next_byte.class == NilClass
+    else
+      raise "datatype not anticipated: #{next_byte.class.to_s}"
+    end
+    File.open("~event.yml","a"){|f| f << "key read (#{next_byte.class.to_s}): #{next_byte.to_yaml}" } if next_byte
+    next_byte
+  end
+
   def check_for_key_mouse_event 
     keys = []
-    keys << main_window.getch # If I get input from Curses.getch, it pauses on <esc>
+    keys << read_key_byte # If I get input from Curses.getch, it pauses on <esc>
     if keys.last == 27
-      keys << main_window.getch
-      if keys.last == "["
-        keys << main_window.getch
-        if keys.last == "M"
-          keys << case main_window.getch
-          when "#"
+      keys << read_key_byte
+      if keys.last == "[".bytes.first
+        keys << read_key_byte
+        if keys.last == "M".bytes.first
+          keys << case read_key_byte
+          when "#".bytes.first
             :button_up
-          when " "
+          when " ".bytes.first
             :button_down
           end
 
-          keys << main_window.getch.bytes.first - 33
-          keys << main_window.getch.bytes.first - 33
+          keys << read_key_byte - 33
+          keys << read_key_byte - 33
+
           keys[4], keys[5] = keys[5], keys[4]
         end
       end
@@ -101,7 +120,7 @@ class ConsoleAccess
     keys.compact!
     if !keys.empty?
       event = self.class::Event.new
-      if keys[2] == "M"
+      if keys[2] == "M".bytes.first
         event.type = :mouse
         event.method = keys[3]
         event.data.lines = keys[4]
@@ -111,7 +130,7 @@ class ConsoleAccess
         event.data.char = keys.first
       end
       @events << event
-      File.open("~event.yml","a"){|f| f << "count: #{@events.count}\n" + event.to_yaml }
+     #file.open("~event.yml","a"){|f| f << "count: #{@events.count}\n" + event.to_yaml }
     end
   end
 
