@@ -1,33 +1,43 @@
 require 'bundler/setup'
 require 'pallet.rb'
+require 'ostruct'
 
-class MainLoop
+class ConsoleAccess
+  class Event
+    attr_accessor :type, :method, :data
+    def initialize
+      @type = nil
+      @method = nil
+      @data = OpenStruct.new
+    end
+
+    def type=(new_type)
+      @type = case new_type
+      when :keyboard
+        new_type
+      when :mouse
+        new_type
+      else
+        raise "unknown event type: #{new_type}"
+      end
+    end
+  end
+
   def initialize
   end
 
-  def run
-    keys_pressed = []
+  def run_loop
+    @events = []
+    @current_pallet = Pallet.load_from_file("pallet.yml")
     quit = false
-    current_pallet = Pallet.load_from_file("pallet.yml")
-    cur_line = Curses.lines / 2
-   #main_window
-      last_coords = [Curses.cols, Curses.lines]
     loop do
-      last_coords = keys_pressed[4..5] if keys_pressed != [] && keys_pressed[3] == :button_down && keys_pressed[2] == "M"
-      main_window.setpos(*last_coords)
-      main_window.color_set(1)
-      main_window.addstr("#")
-      main_window.color_set(0)
-      #main_window.color_set( current_pallet.find_slot_by_name(1)[:index] )
-      #main_window.setpos(cur_line, Curses.cols / 2)
-      #main_window.addstr(" " + color_name) unless keys_pressed.empty?
+      check_for_key_mouse_event
+      if block_given? 
+        quit = (yield(main_window, @events)==:quit ? true : false)
+      else
+        quit = (demo(main_window, @events)==:quit ? true : false)
+      end
 
-      main_window.setpos(Curses.lines - 1, Curses.cols / 2)
-      main_window.addstr("#{last_coords.first}x#{last_coords.last} Press Enter to Quit")
-      main_window.refresh
-      keys_pressed = get_key
-      File.open("~keys_pressed.yml","a"){|f| f << keys_pressed.to_yaml } if !keys_pressed.empty?
-      quit = true if [[13],[3],[26]].include? keys_pressed
       break if quit
     end
     main_window.close
@@ -35,6 +45,26 @@ class MainLoop
     Curses.crmode
     Curses.echo
     @main_window = nil
+  end
+
+  def demo(main_window, events)
+    @last_coords ||= [0,0] 
+    event = events.shift
+    if event
+      @last_coords = [event.data.lines,event.data.cols] if event.type == :mouse && event.method == :button_down
+      File.open("~event.yml","a"){|f| f << event.to_yaml }
+      quit = true if [13,3,26].include?(event.data.char)
+    end
+
+    main_window.setpos(*@last_coords)
+    main_window.color_set(1)
+    main_window.addstr("#")
+    main_window.color_set(0)
+
+    main_window.setpos(Curses.lines - 1, Curses.cols / 2)
+    main_window.addstr("#{@last_coords.first}x#{@last_coords.last} Press Enter to Quit")
+    main_window.refresh
+    :quit if quit
   end
 
   def main_window
@@ -47,9 +77,8 @@ class MainLoop
     @main_window
   end
 
-  def get_key
+  def check_for_key_mouse_event 
     keys = []
-
     keys << main_window.getch # If I get input from Curses.getch, it pauses on <esc>
     if keys.last == 27
       keys << main_window.getch
@@ -66,14 +95,24 @@ class MainLoop
           keys << main_window.getch.bytes.first - 33
           keys << main_window.getch.bytes.first - 33
           keys[4], keys[5] = keys[5], keys[4]
-          3.times{
-            keys << main_window.getch
-          }
         end
       end
     end
     keys.compact!
-    return keys
+    if !keys.empty?
+      event = self.class::Event.new
+      if keys[2] == "M"
+        event.type = :mouse
+        event.method = keys[3]
+        event.data.lines = keys[4]
+        event.data.cols = keys[5]
+      else
+        event.type = :keyboard
+        event.data.char = keys.first
+      end
+      @events << event
+      File.open("~event.yml","a"){|f| f << "count: #{@events.count}\n" + event.to_yaml }
+    end
   end
 
   def setup_screen

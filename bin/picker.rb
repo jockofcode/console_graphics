@@ -4,8 +4,8 @@ require 'pallet.rb'
 require 'pry-byebug'
 require 'main_loop'
 
-main_loop = MainLoop.new
-main_loop.run
+main_loop = ConsoleAccess.new
+main_loop.run_loop
 
 #Curses.init_screen()
 #Curses.start_color
