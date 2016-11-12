@@ -13,16 +13,7 @@ class ConsoleAccess
     end
 
     def type=(new_type)
-      @type = case new_type
-              when :keyboard
-                new_type
-              when :mouse
-                new_type
-              when :screen
-                new_type
-              else
-                raise "unknown event type: #{new_type}"
-              end
+      @type = new_type.to_sym
     end
   end
 
@@ -30,6 +21,37 @@ class ConsoleAccess
 
   def initialize
     @event_checks = []
+  end
+
+  def register_event_check(event_type, &block)
+    event = OpenStruct.new
+    event.check = block
+    event.type = event_type
+    @event_checks << event
+  end
+
+  def select_color(number)
+    ::FFI::NCurses.color_set(number, nil)
+  end
+
+  def move_to_pos(x,y)
+    ::FFI::NCurses.wmove(main_window, y, x)
+  end
+
+  def print_string(string)
+    ::FFI::NCurses.addstr(string)
+  end
+
+  def write_buffer
+    ::FFI::NCurses.wrefresh(main_window)
+  end
+
+  def window_height
+    ::FFI::NCurses.getmaxy(main_window) - 1
+  end
+
+  def window_width
+    ::FFI::NCurses.getmaxx(main_window)
   end
 
   def run_loop
@@ -74,11 +96,24 @@ class ConsoleAccess
     next_byte
   end
 
-  def check_for_event 
+  def send_event(event)
+    #should put a semaphore/mutex around this...
+    @events << event
+  end
+
+  def check_for_event
     event_happened = false
 
-    @event_checks.each{|check|
-      event_happened ||= check.call
+    @event_checks.each{|event_check|
+      result =  event_check.check.call
+      if result != nil
+        event_happened = true
+        event = self.class::Event.new
+        event.type = event_check.type
+        event.method = nil
+        event.data = result
+        send_event(event)
+      end
     }
 
     keys = []
@@ -119,14 +154,14 @@ class ConsoleAccess
         event.type = :keyboard
         event.data.char = keys.first
       end
-      @events << event
+      send_event(event)
     end
     return event_happened
   end
 
   def setup_screen
-    @main_window = ::FFI::NCurses.initscr 
-    ::FFI::NCurses.start_color 
+    @main_window = ::FFI::NCurses.initscr
+    ::FFI::NCurses.start_color
     ::FFI::NCurses.wtimeout(@main_window, 0)
   end
 
