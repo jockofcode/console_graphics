@@ -1,4 +1,3 @@
-require 'curses'
 require 'yaml'
 
 class Pallet
@@ -10,7 +9,7 @@ class Pallet
 
   def set_active_pallet
     get_active_curses_pallet.each do |color_index_and_pair|
-      Curses.init_pair(*color_index_and_pair)
+      FFI::NCurses.init_pair(*color_index_and_pair)
     end
   end
   
