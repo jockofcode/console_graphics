@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby -Iapp -Ilib
-require 'bundler/setup'
-require 'pallet.rb'
-require 'pry-byebug'
+#require 'bundler/setup'
 require 'console_access.rb'
 
 app = ConsoleAccess.new
@@ -9,6 +7,7 @@ start_time = Time.now
 print_char = "$"
 last_coords = [0,0] 
 quit = false
+
 
 app.run_loop {
   event = app.events.shift

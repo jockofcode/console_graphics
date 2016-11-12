@@ -29,7 +29,7 @@ class ConsoleAccess
   attr_accessor :main_window, :current_pallet, :events, :print_char
 
   def initialize
-    #    @print_char = "#"
+    @event_checks = []
   end
 
   def run_loop
@@ -37,38 +37,19 @@ class ConsoleAccess
       @events = []
       @current_pallet = Pallet.load_from_file("pallet.yml")
       quit = false
+      main_window # Needs to be initialized before events can be checked for
       loop do
-        check_for_event
-        quit = (yield(main_window, @events)==:quit ? true : false)
+        event_happened = check_for_event
+        quit = (yield(main_window, @events)==:quit ? true : false) if event_happened
 
         break if quit
       end
     ensure
       ::FFI::NCurses.noraw
       ::FFI::NCurses.echo
-      FFI::NCurses.endwin
+      ::FFI::NCurses.endwin
       @main_window = nil
     end
-  end
-
-  def demo
-    @last_coords ||= [0,0] 
-    event = events.shift
-    if event
-      File.open("~event.yml","a"){|f| f << "count: #{@events.count}\n" + event.to_yaml }
-      @last_coords = [event.data.lines,event.data.cols] if event.type == :mouse && event.method == :button_down
-      quit = true if [13,3,26].include?(event.data.char) # Ctrl<C>, Ctrl<Z>, Enter
-    end
-
-    ::FFI::NCurses.wmove(main_window, *@last_coords)
-    ::FFI::NCurses.color_set(1, nil)
-    ::FFI::NCurses.addstr(@print_char)
-    ::FFI::NCurses.color_set(0, nil)
-
-    ::FFI::NCurses.wmove(main_window, ::FFI::NCurses.getmaxy(@main_window) - 1, ::FFI::NCurses.getmaxx(@main_window) / 2)
-    ::FFI::NCurses.addstr("#{@last_coords.first}x#{@last_coords.last} Press Enter to Quit")
-    ::FFI::NCurses.wrefresh(@main_window)
-    :quit if quit
   end
 
   def main_window
@@ -94,6 +75,12 @@ class ConsoleAccess
   end
 
   def check_for_event 
+    event_happened = false
+
+    @event_checks.each{|check|
+      event_happened ||= check.call
+    }
+
     keys = []
     keys << read_key_byte # If I get input from Curses.getch, it pauses on <esc>
     if keys.last == 27
@@ -117,6 +104,7 @@ class ConsoleAccess
     end
     keys.compact!
     if !keys.empty?
+      event_happened = true
       event = self.class::Event.new
       if keys[2] == "M".bytes.first
         event.type = :mouse
@@ -133,6 +121,7 @@ class ConsoleAccess
       end
       @events << event
     end
+    return event_happened
   end
 
   def setup_screen
