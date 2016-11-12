@@ -23,7 +23,7 @@ class ConsoleAccess
     @event_checks = []
   end
 
-  def register_event_check(event_type, &block)
+  def register_event_trigger(event_type, &block)
     event = OpenStruct.new
     event.check = block
     event.type = event_type
