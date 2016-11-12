@@ -14,47 +14,41 @@ class ConsoleAccess
 
     def type=(new_type)
       @type = case new_type
-      when :keyboard
-        new_type
-      when :mouse
-        new_type
-      when :screen
-        new_type
-      else
-        raise "unknown event type: #{new_type}"
-      end
+              when :keyboard
+                new_type
+              when :mouse
+                new_type
+              when :screen
+                new_type
+              else
+                raise "unknown event type: #{new_type}"
+              end
     end
   end
 
-  attr_accessor :main_window, :current_pallet, :events
+  attr_accessor :main_window, :current_pallet, :events, :print_char
 
   def initialize
-    @print_char = "#"
+    #    @print_char = "#"
   end
 
   def run_loop
     begin
-    @events = []
-    @current_pallet = Pallet.load_from_file("pallet.yml")
-    quit = false
-    loop do
-      check_for_event
-      if block_given? 
+      @events = []
+      @current_pallet = Pallet.load_from_file("pallet.yml")
+      quit = false
+      loop do
+        check_for_event
         quit = (yield(main_window, @events)==:quit ? true : false)
-      else
-        quit = (demo==:quit ? true : false)
-      end
 
-      break if quit
+        break if quit
+      end
+    ensure
+      ::FFI::NCurses.noraw
+      ::FFI::NCurses.echo
+      FFI::NCurses.endwin
+      @main_window = nil
     end
-  ensure
-    ::FFI::NCurses.noraw
-   ::FFI::NCurses.echo
-    FFI::NCurses.endwin
-   #main_window.close
-   #::FFI::NCurses.crmode
-    @main_window = nil
-  end
   end
 
   def demo
@@ -79,11 +73,9 @@ class ConsoleAccess
 
   def main_window
     if !@main_window
-     #@main_window = ::FFI::NCurses::newwin(*([0] * 4))
-     #@main_window = ::FFI::NCurses::newwin(0,0,0,0)
       setup_screen
       setup_pallet
-      setup_keyboard
+      setup_input
     end
     @main_window
   end
@@ -149,10 +141,10 @@ class ConsoleAccess
     ::FFI::NCurses.wtimeout(@main_window, 0)
   end
 
-  def setup_keyboard
+  def setup_input
     ::FFI::NCurses.noecho
     ::FFI::NCurses.nonl
-   #main_window.keypad(false)
+    #main_window.keypad(false)
     ::FFI::NCurses.keypad(@main_window, 0) #TODO probably want this true for mouse...
     ::FFI::NCurses.raw
     ::FFI::NCurses.mousemask(
