@@ -19,10 +19,15 @@ class ConsoleAccess
 
   attr_accessor :main_window, :current_pallet, :events, :print_char
 
-  def initialize
+  def initialize(show_cursor: true, pallet_file_name: "pallet.yml")
     @event_checks = []
     @events = []
-    @current_pallet = Pallet.load_from_file("pallet.yml")
+    @event_blocks = {}
+    @current_pallet = Pallet.load_from_file(pallet_file_name)
+    setup_screen
+    setup_pallet
+    setup_input
+    self.show_cursor(show_cursor)
   end
 
   def register_event_trigger(event_type, &block)
@@ -30,6 +35,10 @@ class ConsoleAccess
     event.check = block
     event.type = event_type
     @event_checks << event
+  end
+
+  def register_event(event_type, &block)
+    @event_blocks[event_type] = block
   end
 
   def select_color(number)
@@ -66,25 +75,23 @@ class ConsoleAccess
       main_window # Needs to be initialized before events can be checked for
       loop do
         event_happened = check_for_event
-        quit = (yield(main_window, @events)==:quit ? true : false) if event_happened
+        if event_happened
+          if @event_blocks.has_key?(@events[0].type)
+            event = @events.shift
+            @event_blocks[event.type].call(event)
+          end
+          quit = (yield(main_window, @events)==:quit ? true : false) 
+        end
+        if quit
 
-        break if quit
+          shutdown_screen
+          return
+        end
       end
-    ensure
-      ::FFI::NCurses.curs_set 1
-      ::FFI::NCurses.noraw
-      ::FFI::NCurses.echo
-      ::FFI::NCurses.endwin
-      @main_window = nil
     end
   end
 
   def main_window
-    if !@main_window
-      setup_screen
-      setup_pallet
-      setup_input
-    end
     @main_window
   end
 
@@ -167,6 +174,14 @@ class ConsoleAccess
     @main_window = ::FFI::NCurses.initscr
     ::FFI::NCurses.start_color
     ::FFI::NCurses.wtimeout(@main_window, 0)
+  end
+
+  def shutdown_screen
+    ::FFI::NCurses.curs_set 1
+    ::FFI::NCurses.noraw
+    ::FFI::NCurses.echo
+    ::FFI::NCurses.endwin
+    @main_window = nil
   end
 
   def setup_input
