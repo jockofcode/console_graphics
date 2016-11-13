@@ -6,8 +6,8 @@ require 'ffi-ncurses'
 class ConsoleAccess
   class Event
     attr_accessor :type, :method, :data
-    def initialize
-      @type = nil
+    def initialize(type = nil)
+      @type = type
       @method = nil
       @data = OpenStruct.new
     end
@@ -21,6 +21,8 @@ class ConsoleAccess
 
   def initialize
     @event_checks = []
+    @events = []
+    @current_pallet = Pallet.load_from_file("pallet.yml")
   end
 
   def register_event_check(event_type, &block)
@@ -54,10 +56,12 @@ class ConsoleAccess
     ::FFI::NCurses.getmaxx(main_window)
   end
 
+  def show_cursor(visible = true)
+    ::FFI::NCurses.curs_set( visible ? 1 : 0 )
+  end
+
   def run_loop
     begin
-      @events = []
-      @current_pallet = Pallet.load_from_file("pallet.yml")
       quit = false
       main_window # Needs to be initialized before events can be checked for
       loop do
@@ -67,6 +71,7 @@ class ConsoleAccess
         break if quit
       end
     ensure
+      ::FFI::NCurses.curs_set 1
       ::FFI::NCurses.noraw
       ::FFI::NCurses.echo
       ::FFI::NCurses.endwin
@@ -108,8 +113,7 @@ class ConsoleAccess
       result =  event_check.check.call
       if result != nil
         event_happened = true
-        event = self.class::Event.new
-        event.type = event_check.type
+        event = self.class::Event.new(event_check.type)
         event.method = nil
         event.data = result
         send_event(event)

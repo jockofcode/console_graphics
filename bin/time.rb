@@ -4,6 +4,8 @@ require 'console_access.rb'
 require 'yaml'
 
 app = ConsoleAccess.new
+app.show_cursor false
+app.send_event(ConsoleAccess::Event.new(:update_screen))
 start_time = Time.now
 quit = false
 
