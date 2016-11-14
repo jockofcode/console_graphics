@@ -37,19 +37,15 @@ app.register_event(:update_screen){ |event|
   app.move_to_pos(0,0)
 }
 
-app.register_event(:keypress) { |event|
+app.register_event(:keyboard) { |event|
   # Ctrl<C>, Ctrl<Z>, Enter, or <ESC>
-  if event && event.type == :keyboard && [13,3,26].include?(event.data.char)
-    quit = true
+  if [13,3,26].include?(event.data.char)
+    app.quit = true
   end
 }
 
-app.register_event(:redraw_screen){
-  app.write_buffer
-}
-
-app.run_loop { |window, events|
-  :quit if quit
-}
-
-puts "this is after the app.run_loop"
+#app.register_event(:redraw_screen){
+#  app.write_buffer
+#}
+#
+app.run_loop 

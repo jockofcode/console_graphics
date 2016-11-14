@@ -17,12 +17,13 @@ class ConsoleAccess
     end
   end
 
-  attr_accessor :main_window, :current_pallet, :events, :print_char
+  attr_accessor :main_window, :current_pallet, :events, :print_char, :quit
 
   def initialize(show_cursor: true, pallet_file_name: "pallet.yml")
     @event_checks = []
     @events = []
     @event_blocks = {}
+    @quit = false
     @current_pallet = Pallet.load_from_file(pallet_file_name)
     setup_screen
     setup_pallet
@@ -71,23 +72,19 @@ class ConsoleAccess
 
   def run_loop
     begin
-      quit = false
       main_window # Needs to be initialized before events can be checked for
       loop do
         event_happened = check_for_event
         if event_happened
-          if @event_blocks.has_key?(@events[0].type)
             event = @events.shift
+          if @event_blocks.has_key?(event.type)
             @event_blocks[event.type].call(event)
           end
-          quit = (yield(main_window, @events)==:quit ? true : false) 
-        end
-        if quit
-
-          shutdown_screen
-          return
+          break if @quit
         end
       end
+    ensure
+      shutdown_screen
     end
   end
 
