@@ -35,7 +35,7 @@ app.register_event(:update_screen){ |event|
   app.move_to_pos(((app.window_width - time.to_s.length)  / 2), 0)
   app.print_string(event_string)
   app.move_to_pos(0,0)
-#  app.write_buffer
+  app.send_event(ConsoleAccess::Event.new(:redraw_screen))
 }
 
 app.register_event(:keyboard) { |event|
@@ -45,8 +45,9 @@ app.register_event(:keyboard) { |event|
   end
 }
 
-#app.register_event(:redraw_screen){
-#  app.write_buffer
-#}
-#
+# This wasn't making a difference.... :(
+app.register_event(:redraw_screen){
+  app.write_buffer
+}
+
 app.run_loop 

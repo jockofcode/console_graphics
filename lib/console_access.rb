@@ -75,10 +75,15 @@ class ConsoleAccess
 #      main_window # Needs to be initialized before events can be checked for
       loop do
         event_happened = check_for_event
+        local_events = @events
+        @events = []
         if event_happened
-            event = @events.shift
-          if @event_blocks.has_key?(event.type)
-            @event_blocks[event.type].call(event)
+          local_events.each do |event|
+            if @event_blocks.has_key?(event.type)
+              @event_blocks[event.type].call(event)
+            else
+              yield event if block_given?
+            end
           end
           break if @quit
         end
