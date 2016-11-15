@@ -35,6 +35,7 @@ app.register_event(:update_screen){ |event|
   app.move_to_pos(((app.window_width - time.to_s.length)  / 2), 0)
   app.print_string(event_string)
   app.move_to_pos(0,0)
+#  app.write_buffer
 }
 
 app.register_event(:keyboard) { |event|

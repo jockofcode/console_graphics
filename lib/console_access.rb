@@ -51,7 +51,7 @@ class ConsoleAccess
   end
 
   def print_string(string)
-    ::FFI::NCurses.addstr(string)
+    ::FFI::NCurses.waddstr(main_window,string)
   end
 
   def write_buffer
@@ -72,7 +72,7 @@ class ConsoleAccess
 
   def run_loop
     begin
-      main_window # Needs to be initialized before events can be checked for
+#      main_window # Needs to be initialized before events can be checked for
       loop do
         event_happened = check_for_event
         if event_happened
