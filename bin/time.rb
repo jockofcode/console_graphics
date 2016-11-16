@@ -31,6 +31,7 @@ app.register_event_trigger(:update_screen){
 app.register_event(:update_screen){ |event|
   time = Time.now
   seconds = time - start_time
+  app.clear_screen
   event_string = (loop_count.to_f / seconds.to_f).to_i.to_s + " per second"
   app.move_to_pos(((app.window_width - time.to_s.length)  / 2), 0)
   app.print_string(event_string)

@@ -17,6 +17,13 @@ class ConsoleAccess
     end
   end
 
+  SPECIAL_KEY_MAP = {
+    "[A" => :up_arrow,
+    "[B" => :down_arrow,
+    "[C" => :right_arrow,
+    "[D" => :left_arrow,
+  }
+
   attr_accessor :main_window, :current_pallet, :events, :print_char, :quit
 
   def initialize(show_cursor: true, pallet_file_name: "pallet.yml")
@@ -52,6 +59,10 @@ class ConsoleAccess
 
   def print_string(string)
     ::FFI::NCurses.waddstr(main_window,string)
+  end
+
+  def clear_screen
+    ::FFI::NCurses.wclear(main_window)
   end
 
   def write_buffer
@@ -159,6 +170,9 @@ class ConsoleAccess
         event.method = keys[3]
         event.data.lines = keys[4]
         event.data.cols = keys[5]
+      elsif (65..68).include?(keys[2]) # A..D
+        event.type = :special_keys
+        event.data.key = SPECIAL_KEY_MAP[keys[1..2].map(&:chr).join]
       elsif keys[0] == 410
         event.type = :screen
         current_screen_size = [::FFI::NCurses.getmaxyx(@main_window,nil,nil)]
