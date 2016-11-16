@@ -12,10 +12,10 @@ class Pallet
       FFI::NCurses.init_pair(*color_index_and_pair)
     end
   end
-  
+
   def self.load_from_file(filename)
     if !File.exists?(filename)
-      File.open(filename,"w") {|f| f << {}.to_yaml }  
+      File.open(filename,"w") {|f| f << {}.to_yaml }
     end
 
     p = new
@@ -25,7 +25,7 @@ class Pallet
   end
 
   def save(filename)
-      File.open(filename,"w") {|f| f << @pallet.to_yaml }  
+      File.open(filename,"w") {|f| f << @pallet.to_yaml }
       true
   end
 
@@ -52,7 +52,7 @@ class Pallet
     next_index = ((1..255).to_a - @pallet.map{|k,v| v[:index]}).sort.first
 
     if next_index == nil || options[:create_new_index] != true
-      puts "No slots left for color"
+#      puts "No slots left for color"
       @pallet[name] = {index: nil, fg: fg, bg: bg}
       return name
     else
