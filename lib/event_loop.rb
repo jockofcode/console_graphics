@@ -3,7 +3,7 @@ require 'pallet.rb'
 require 'ostruct'
 require 'ffi-ncurses'
 
-class ConsoleAccess
+class EventLoop
   class Event
     attr_accessor :type, :method, :data
     def initialize(type = nil)
@@ -24,18 +24,26 @@ class ConsoleAccess
     "[D" => :left_arrow,
   }
 
-  attr_accessor :main_window, :current_pallet, :events, :print_char, :quit
+  attr_accessor :current_pallet, :events, :print_char, :quit
 
-  def initialize(show_cursor: true, pallet_file_name: "pallet.yml")
+  def initialize(display: NCursesDisplay, keyreader: NCursesKeyreader, show_cursor: true, pallet_file_name: "pallet.yml")
+    begin
     @event_checks = []
     @events = []
     @event_blocks = {}
     @quit = false
     @current_pallet = Pallet.load_from_file(pallet_file_name)
-    setup_screen
+    @display = display.new
+    @keyboard = keyreader.new
+   
     setup_pallet
-    setup_input
+  #  setup_input
     self.show_cursor(show_cursor)
+    run
+    ensure
+      @keyboard&.destroy
+      @display&.destroy
+    end
   end
 
   def register_event_trigger(event_type, &block)
@@ -50,40 +58,43 @@ class ConsoleAccess
   end
 
   def select_color(number)
-    ::FFI::NCurses.color_set(number, nil)
+    @display.select_color(number)
   end
 
   def move_to_pos(x,y)
-    ::FFI::NCurses.wmove(main_window, y, x)
+    @display.move_to_pos(x,y)
   end
 
   def print_string(string)
-    ::FFI::NCurses.waddstr(main_window,string)
+    @display.print_string(string)
   end
 
   def clear_screen
-    ::FFI::NCurses.wclear(main_window)
+    @display.clear_screen
   end
 
   def write_buffer
-    ::FFI::NCurses.wrefresh(main_window)
+    @display.write_buffer
   end
 
   def window_height
-    ::FFI::NCurses.getmaxy(main_window) - 1
+    @display.window_height
   end
 
   def window_width
-    ::FFI::NCurses.getmaxx(main_window)
+    @display.window_width
   end
 
   def show_cursor(visible = true)
-    ::FFI::NCurses.curs_set( visible ? 1 : 0 )
+    @display.show_cursor(visible = true)
   end
 
-  def run_loop
-    begin
-#      main_window # Needs to be initialized before events can be checked for
+  def getch
+    @keyboard.getch
+  end
+
+  def run
+      #      main_window # Needs to be initialized before events can be checked for
       loop do
         event_happened = check_for_event
         local_events = @events
@@ -99,17 +110,11 @@ class ConsoleAccess
           break if @quit
         end
       end
-    ensure
-      shutdown_screen
-    end
-  end
-
-  def main_window
-    @main_window
   end
 
   def read_key_byte
-    next_byte = ::FFI::NCurses.getch
+
+    next_byte = keyreader.getch 
     next_byte = nil if next_byte == -1
     if next_byte.class == Fixnum
     elsif next_byte.class == String
@@ -175,7 +180,7 @@ class ConsoleAccess
         event.data.key = SPECIAL_KEY_MAP[keys[1..2].map(&:chr).join]
       elsif keys[0] == 410
         event.type = :screen
-        current_screen_size = [::FFI::NCurses.getmaxyx(@main_window,nil,nil)]
+        current_screen_size = @display.screen_size  
         event.data.size = current_screen_size.dup
       else
         event.type = :keyboard
@@ -186,26 +191,16 @@ class ConsoleAccess
     return event_happened
   end
 
-  def setup_screen
-    @main_window = ::FFI::NCurses.initscr
-    ::FFI::NCurses.start_color
-    ::FFI::NCurses.wtimeout(@main_window, 0)
-  end
-
-  def shutdown_screen
-    ::FFI::NCurses.curs_set 1
-    ::FFI::NCurses.noraw
-    ::FFI::NCurses.echo
-    ::FFI::NCurses.endwin
-    @main_window = nil
-  end
+  # def setup_screen
+  #   @main_window = ::FFI::NCurses.initscr
+  #   ::FFI::NCurses.start_color
+  #   ::FFI::NCurses.wtimeout(@main_window, 0)
+  # end
+  #
 
   def setup_input
-    ::FFI::NCurses.noecho
-    ::FFI::NCurses.nonl
     #main_window.keypad(false)
     ::FFI::NCurses.keypad(@main_window, 0) #TODO probably want this true for mouse...
-    ::FFI::NCurses.raw
     ::FFI::NCurses.mousemask(
       ::FFI::NCurses::BUTTON1_PRESSED|
       ::FFI::NCurses::BUTTON1_RELEASED|
@@ -241,3 +236,81 @@ class ConsoleAccess
   end
 end
 
+class NCursesKeyreader
+  def initialize
+    setup
+  end
+
+  def setup
+    ::FFI::NCurses.raw
+    ::FFI::NCurses.noecho
+    ::FFI::NCurses.nonl
+  end
+
+  def destroy
+    ::FFI::NCurses.noraw
+    ::FFI::NCurses.echo
+    ::FFI::NCurses.nl
+  end
+
+  def getch
+    ::FFI::NCurses.getch
+  end
+end
+
+class NCursesDisplay
+  attr_accessor :main_window
+  def initialize
+    setup_screen
+  end
+
+  def setup
+    @main_window = ::FFI::NCurses.initscr
+    ::FFI::NCurses.start_color
+    ::FFI::NCurses.wtimeout(@main_window, 0)
+  end
+
+  def destroy
+    ::FFI::NCurses.curs_set 1
+    ::FFI::NCurses.noraw
+    ::FFI::NCurses.echo
+    ::FFI::NCurses.endwin
+    @main_window = nil
+  end
+
+  def select_color(number)
+    ::FFI::NCurses.color_set(number, nil)
+  end
+
+  def move_to_pos(x,y)
+    ::FFI::NCurses.wmove(main_window, y, x)
+  end
+
+  def print_string(string)
+    ::FFI::NCurses.waddstr(main_window,string)
+  end
+
+  def clear_screen
+    ::FFI::NCurses.wclear(main_window)
+  end
+
+  def write_buffer
+    ::FFI::NCurses.wrefresh(main_window)
+  end
+
+  def window_height
+    ::FFI::NCurses.getmaxy(main_window) - 1
+  end
+
+  def window_width
+    ::FFI::NCurses.getmaxx(main_window)
+  end
+
+  def screen_size
+    [::FFI::NCurses.getmaxyx(main_window,nil,nil)]
+  end
+
+  def show_cursor(visible = true)
+    ::FFI::NCurses.curs_set( visible ? 1 : 0 )
+  end
+end
