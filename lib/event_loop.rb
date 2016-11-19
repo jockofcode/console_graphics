@@ -27,15 +27,15 @@ class EventLoop
 
   attr_accessor :current_pallet, :events, :print_char, :quit
 
-  def initialize(display: NCursesDisplay, keyreader: NCursesKeyReader, mousereader: NCursesMouseReader show_cursor: true, pallet_file_name: "pallet.yml")
+  def initialize(display: NCursesDisplay, keyreader: NCursesKeyReader, mousereader: NCursesMouseReader, show_cursor: true, pallet_file_name: "pallet.yml")
     @event_checks = []
     @events = []
     @event_blocks = {}
     @quit = false
     @current_pallet = Pallet.load_from_file(pallet_file_name)
-    @display = display.new
-    @keyboard = keyreader.new
-    @mouse = mousereader.new
+    @display = display&.new
+    @keyboard = keyreader&.new
+    @mouse = mousereader&.new
 
     setup_pallet
     self.show_cursor(show_cursor)
@@ -43,6 +43,7 @@ class EventLoop
     at_exit do
       @keyboard&.destroy
       @display&.destroy
+      @mouse&.destroy
       puts "Keyboard and Display reset back to normal"
       exit 0
     end
@@ -192,8 +193,43 @@ class EventLoop
     return event_happened
   end
 
-  def setup_input
-    ::FFI::NCurses.keypad(@main_window, 0) #TODO probably want this true for mouse...
+
+  def setup_pallet(pallet = Pallet.load_from_file("pallet.yml"))
+    pallet.set_active_pallet
+  end
+
+end
+
+class NCursesKeyReader
+  def initialize
+    setup
+  end
+
+  def setup
+    # ::FFI::NCurses.keypad(@main_window, 0) #TODO probably want this true for mouse...
+    ::FFI::NCurses.raw
+    ::FFI::NCurses.noecho
+    ::FFI::NCurses.nonl
+  end
+
+  def destroy
+    ::FFI::NCurses.noraw
+    ::FFI::NCurses.echo
+    ::FFI::NCurses.nl
+  end
+
+  def getch
+    ::FFI::NCurses.getch
+  end
+end
+
+class NCursesMouseReader
+
+  def initialize
+    setup
+  end
+
+  def setup
     ::FFI::NCurses.mousemask(
       ::FFI::NCurses::BUTTON1_PRESSED|
       ::FFI::NCurses::BUTTON1_RELEASED|
@@ -224,37 +260,8 @@ class EventLoop
     )
   end
 
-  def setup_pallet(pallet = Pallet.load_from_file("pallet.yml"))
-    pallet.set_active_pallet
-  end
-end
-
-class NCursesKeyReader
-  def initialize
-    setup
-  end
-
-  def setup
-    ::FFI::NCurses.raw
-    ::FFI::NCurses.noecho
-    ::FFI::NCurses.nonl
-  end
-
   def destroy
-    ::FFI::NCurses.noraw
-    ::FFI::NCurses.echo
-    ::FFI::NCurses.nl
   end
-
-  def getch
-    ::FFI::NCurses.getch
-  end
-end
-
-class NCursesMouseReader
-  def setup
-  end
-
 end
 
 class NCursesDisplay
