@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby -Iapp -Ilib
-
+require 'bundler/setup'
 require 'event_loop.rb'
 require 'yaml'
 
@@ -28,6 +28,12 @@ app.register_event_trigger(:update_screen){
   end
 }
 
+app.register_event_trigger(:bad_trigger){
+  # example of a slow event that could mess up everything :)
+  sleep 1.0/90.0
+  nil
+}
+
 app.register_event(:update_screen){ |event|
   time = Time.now
   seconds = time - start_time
@@ -47,8 +53,8 @@ app.register_event(:keyboard) { |event|
 }
 
 # This wasn't making a difference.... :(
-app.register_event(:redraw_screen){
-  app.write_buffer
-}
+# app.register_event(:redraw_screen){
+#   app.write_buffer
+# }
 
 app.run 

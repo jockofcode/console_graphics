@@ -22,6 +22,6 @@ app.run { |event|
     status = "#{last_coords.first}x#{last_coords.last} Press Enter to Quit"
     app.move_to_pos((app.window_width - status.length) / 2, app.window_height)
     app.print_string(status)
-    app.write_buffer
+    # app.write_buffer
   end
 }

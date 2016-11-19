@@ -289,19 +289,23 @@ class NCursesDisplay
   end
 
   def move_to_pos(x,y)
-    ::FFI::NCurses.wmove(@main_window, y, x)
+    # ::FFI::NCurses.wmove(@main_window, y, x)
+    ::FFI::NCurses.move(y, x)
   end
 
   def print_string(string)
-    ::FFI::NCurses.waddstr(@main_window,string)
+    # ::FFI::NCurses.waddstr(@main_window,string)
+    ::FFI::NCurses.addstr(string)
   end
 
   def clear_screen
-    ::FFI::NCurses.wclear(@main_window)
+    ::FFI::NCurses.clear
+    # ::FFI::NCurses.wclear(@main_window)
   end
 
   def write_buffer
-    ::FFI::NCurses.wrefresh(@main_window)
+    # ::FFI::NCurses.wrefresh(@main_window)
+    ::FFI::NCurses.refresh
   end
 
   def window_height
@@ -318,8 +322,5 @@ class NCursesDisplay
 
   def show_cursor(visible = true)
     ::FFI::NCurses.curs_set( visible ? 1 : 0 )
-  end
-
-  def refresh
   end
 end
