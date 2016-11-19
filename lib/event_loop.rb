@@ -27,7 +27,6 @@ class EventLoop
   attr_accessor :current_pallet, :events, :print_char, :quit
 
   def initialize(display: NCursesDisplay, keyreader: NCursesKeyreader, show_cursor: true, pallet_file_name: "pallet.yml")
-    begin
     @event_checks = []
     @events = []
     @event_blocks = {}
@@ -37,12 +36,13 @@ class EventLoop
     @keyboard = keyreader.new
    
     setup_pallet
-  #  setup_input
     self.show_cursor(show_cursor)
-    run
-    ensure
+
+    at_exit do
       @keyboard&.destroy
       @display&.destroy
+      puts "Keyboard and Display reset back to normal"
+      exit 0
     end
   end
 
@@ -76,6 +76,7 @@ class EventLoop
   def write_buffer
     @display.write_buffer
   end
+  alias_method :refresh, :write_buffer
 
   def window_height
     @display.window_height
@@ -86,7 +87,7 @@ class EventLoop
   end
 
   def show_cursor(visible = true)
-    @display.show_cursor(visible = true)
+    @display.show_cursor(visible)
   end
 
   def getch
@@ -113,8 +114,7 @@ class EventLoop
   end
 
   def read_key_byte
-
-    next_byte = keyreader.getch 
+    next_byte = @keyboard.getch 
     next_byte = nil if next_byte == -1
     if next_byte.class == Fixnum
     elsif next_byte.class == String
@@ -261,7 +261,7 @@ end
 class NCursesDisplay
   attr_accessor :main_window
   def initialize
-    setup_screen
+    setup
   end
 
   def setup
@@ -283,34 +283,37 @@ class NCursesDisplay
   end
 
   def move_to_pos(x,y)
-    ::FFI::NCurses.wmove(main_window, y, x)
+    ::FFI::NCurses.wmove(@main_window, y, x)
   end
 
   def print_string(string)
-    ::FFI::NCurses.waddstr(main_window,string)
+    ::FFI::NCurses.waddstr(@main_window,string)
   end
 
   def clear_screen
-    ::FFI::NCurses.wclear(main_window)
+    ::FFI::NCurses.wclear(@main_window)
   end
 
   def write_buffer
-    ::FFI::NCurses.wrefresh(main_window)
+    ::FFI::NCurses.wrefresh(@main_window)
   end
 
   def window_height
-    ::FFI::NCurses.getmaxy(main_window) - 1
+    ::FFI::NCurses.getmaxy(@main_window) - 1
   end
 
   def window_width
-    ::FFI::NCurses.getmaxx(main_window)
+    ::FFI::NCurses.getmaxx(@main_window)
   end
 
   def screen_size
-    [::FFI::NCurses.getmaxyx(main_window,nil,nil)]
+    [::FFI::NCurses.getmaxyx(@main_window,nil,nil)]
   end
 
   def show_cursor(visible = true)
     ::FFI::NCurses.curs_set( visible ? 1 : 0 )
+  end
+
+  def refresh
   end
 end

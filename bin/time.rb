@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby -Iapp -Ilib
 
-require 'console_access.rb'
+require 'event_loop.rb'
 require 'yaml'
 
-app = ConsoleAccess.new(show_cursor: false)
-app.send_event(ConsoleAccess::Event.new(:update_screen))
+app = EventLoop.new(show_cursor: false)
+app.send_event(EventLoop::Event.new(:update_screen))
 start_time = Time.now
 quit = false
 
@@ -36,7 +36,7 @@ app.register_event(:update_screen){ |event|
   app.move_to_pos(((app.window_width - time.to_s.length)  / 2), 0)
   app.print_string(event_string)
   app.move_to_pos(0,0)
-  app.send_event(ConsoleAccess::Event.new(:redraw_screen))
+  app.send_event(EventLoop::Event.new(:redraw_screen))
 }
 
 app.register_event(:keyboard) { |event|
@@ -51,4 +51,4 @@ app.register_event(:redraw_screen){
   app.write_buffer
 }
 
-app.run_loop 
+app.run 

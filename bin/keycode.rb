@@ -1,10 +1,9 @@
 #!/usr/bin/env ruby -Iapp -Ilib
 
-require 'console_access.rb'
+require 'event_loop.rb'
 require 'yaml'
 
-app = ConsoleAccess.new(show_cursor: false)
-quit = false
+app = EventLoop.new(show_cursor: false)
 
 app.register_event(:keyboard) { |event|
   app.clear_screen
@@ -29,4 +28,4 @@ app.register_event(:redraw_screen){
   app.write_buffer
 }
 
-app.run_loop 
+app.run 
