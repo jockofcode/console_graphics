@@ -17,6 +17,7 @@ class EventLoop
     end
   end
 
+  # Should move to key processing class, outside of generic event class
   SPECIAL_KEY_MAP = {
     "[A" => :up_arrow,
     "[B" => :down_arrow,
@@ -26,7 +27,7 @@ class EventLoop
 
   attr_accessor :current_pallet, :events, :print_char, :quit
 
-  def initialize(display: NCursesDisplay, keyreader: NCursesKeyreader, show_cursor: true, pallet_file_name: "pallet.yml")
+  def initialize(display: NCursesDisplay, keyreader: NCursesKeyReader, mousereader: NCursesMouseReader show_cursor: true, pallet_file_name: "pallet.yml")
     @event_checks = []
     @events = []
     @event_blocks = {}
@@ -34,7 +35,8 @@ class EventLoop
     @current_pallet = Pallet.load_from_file(pallet_file_name)
     @display = display.new
     @keyboard = keyreader.new
-   
+    @mouse = mousereader.new
+
     setup_pallet
     self.show_cursor(show_cursor)
 
@@ -95,22 +97,21 @@ class EventLoop
   end
 
   def run
-      #      main_window # Needs to be initialized before events can be checked for
-      loop do
-        event_happened = check_for_event
-        local_events = @events
-        @events = []
-        if event_happened
-          local_events.each do |event|
-            if @event_blocks.has_key?(event.type)
-              @event_blocks[event.type].call(event)
-            else
-              yield event if block_given?
-            end
+    loop do
+      event_happened = check_for_event
+      local_events = @events
+      @events = []
+      if event_happened
+        local_events.each do |event|
+          if @event_blocks.has_key?(event.type)
+            @event_blocks[event.type].call(event)
+          else
+            yield event if block_given?
           end
-          break if @quit
         end
+        break if @quit
       end
+    end
   end
 
   def read_key_byte
@@ -191,15 +192,7 @@ class EventLoop
     return event_happened
   end
 
-  # def setup_screen
-  #   @main_window = ::FFI::NCurses.initscr
-  #   ::FFI::NCurses.start_color
-  #   ::FFI::NCurses.wtimeout(@main_window, 0)
-  # end
-  #
-
   def setup_input
-    #main_window.keypad(false)
     ::FFI::NCurses.keypad(@main_window, 0) #TODO probably want this true for mouse...
     ::FFI::NCurses.mousemask(
       ::FFI::NCurses::BUTTON1_PRESSED|
@@ -236,7 +229,7 @@ class EventLoop
   end
 end
 
-class NCursesKeyreader
+class NCursesKeyReader
   def initialize
     setup
   end
@@ -256,6 +249,12 @@ class NCursesKeyreader
   def getch
     ::FFI::NCurses.getch
   end
+end
+
+class NCursesMouseReader
+  def setup
+  end
+
 end
 
 class NCursesDisplay
