@@ -5,7 +5,7 @@ require 'yaml'
 
 app = EventLoop.new(show_cursor: false)
 
-app.register_event(:keyboard) { |event|
+app.on_event(:keyboard) { |event|
   app.clear_screen
   app.move_to_pos(0,0)
   event_string = event.to_yaml
@@ -16,7 +16,7 @@ app.register_event(:keyboard) { |event|
   end
 }
 
-app.register_event(:special_keys) { |event|
+app.on_event(:special_keys) { |event|
   app.clear_screen
   app.move_to_pos(0,0)
   event_string = event.to_yaml
@@ -24,7 +24,7 @@ app.register_event(:special_keys) { |event|
 }
 
 # This wasn't making a difference.... :(
-app.register_event(:redraw_screen){
+app.on_event(:redraw_screen){
   app.write_buffer
 }
 

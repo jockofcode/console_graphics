@@ -31,6 +31,7 @@ class EventLoop
     @event_checks = []
     @events = []
     @event_blocks = {}
+    @named_event_blocks = {}
     @quit = false
     @current_pallet = Pallet.load_from_file(pallet_file_name)
     @display = display&.new
@@ -49,15 +50,22 @@ class EventLoop
     end
   end
 
-  def register_event_trigger(event_type, &block)
+  def on_event_trigger(event_type, &block)
     event = OpenStruct.new
     event.check = block
     event.type = event_type
     @event_checks << event
   end
 
-  def register_event(event_type, &block)
+  def on_event(event_type, responder_name = nil,  &block)
     @event_blocks[event_type] = block
+    @named_event_blocks[responder_name] = block if responder_name
+  end
+
+  def remove_event_responder(responder_name)
+    @event_blocks.reject!{|event_type, responder|
+      @named_event_blocks[responder_name] == responder
+    }
   end
 
   def select_color(number)
@@ -100,7 +108,7 @@ class EventLoop
   def run
     loop do
       event_happened = check_for_event
-      local_events = @events
+      local_events = @events.dup
       @events = []
       if event_happened
         local_events.each do |event|

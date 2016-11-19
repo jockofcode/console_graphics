@@ -13,7 +13,7 @@ loop_count = 0
 start_time = last_time_checked
 update_frequency = (1.0 / 60.0)
 
-app.register_event_trigger(:update_screen){
+app.on_event_trigger(:update_screen){
   now = Time.now
   loop_count += 1
   if loop_count > 10_000_000
@@ -28,13 +28,13 @@ app.register_event_trigger(:update_screen){
   end
 }
 
-app.register_event_trigger(:bad_trigger){
+app.on_event_trigger(:bad_trigger){
   # example of a slow event that could mess up everything :)
   sleep 1.0/90.0
   nil
 }
 
-app.register_event(:update_screen){ |event|
+app.on_event(:update_screen){ |event|
   time = Time.now
   seconds = time - start_time
   app.clear_screen
@@ -45,7 +45,7 @@ app.register_event(:update_screen){ |event|
   app.send_event(EventLoop::Event.new(:redraw_screen))
 }
 
-app.register_event(:keyboard) { |event|
+app.on_event(:keyboard) { |event|
   # Ctrl<C>, Ctrl<Z>, Enter, or <ESC>
   if [13,3,26].include?(event.data.char)
     app.quit = true
@@ -53,7 +53,7 @@ app.register_event(:keyboard) { |event|
 }
 
 # This wasn't making a difference.... :(
-# app.register_event(:redraw_screen){
+# app.on_event(:redraw_screen){
 #   app.write_buffer
 # }
 
