@@ -21,10 +21,10 @@ module ConsoleGraphics
 
     # Should move to key processing class, outside of generic event class
     SPECIAL_KEY_MAP = {
-      "[A" => :up_arrow,
-      "[B" => :down_arrow,
-      "[C" => :right_arrow,
-      "[D" => :left_arrow,
+      23361 => :up_arrow,
+      23362 => :down_arrow,
+      23363 => :right_arrow,
+      23364 => :left_arrow,
     }
 
     attr_accessor :current_pallet, :events, :print_char, :quit
@@ -188,8 +188,8 @@ module ConsoleGraphics
           event.data.lines = keys[4]
           event.data.cols = keys[5]
         elsif (65..68).include?(keys[2]) # A..D
-          event.type = :special_keys
-          event.data.key = SPECIAL_KEY_MAP[keys[1..2].map(&:chr).join]
+          event.type = :keyboard
+          event.data.char = (ks = keys[1..2]; (ks[0] * 256) + ks[1])
         elsif keys[0] == 410
           event.type = :screen
           current_screen_size = @display.screen_size  
