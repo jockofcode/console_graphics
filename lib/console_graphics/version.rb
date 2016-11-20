@@ -1,3 +1,3 @@
-module ConsoleGraphics
-  VERSION = "0.1.5"
+class ConsoleGraphics
+  VERSION = "0.1.6"
 end

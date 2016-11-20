@@ -1,32 +1,12 @@
 require 'bundler/setup'
 
 require 'console_graphics/pallet.rb'
+require 'console_graphics/event.rb'
 require 'ostruct'
 require 'ffi-ncurses'
 
-module ConsoleGraphics
+class ConsoleGraphics
   class EventLoop
-    class Event
-      attr_accessor :type, :method, :data
-      def initialize(type = nil)
-        @type = type
-        @method = nil
-        @data = OpenStruct.new
-      end
-
-      def type=(new_type)
-        @type = new_type.to_sym
-      end
-    end
-
-    # Should move to key processing class, outside of generic event class
-    SPECIAL_KEY_MAP = {
-      23361 => :up_arrow,
-      23362 => :down_arrow,
-      23363 => :right_arrow,
-      23364 => :left_arrow,
-    }
-
     attr_accessor :current_pallet, :events, :print_char, :quit
 
     def initialize(display: NCursesDisplay, keyreader: NCursesKeyReader, mousereader: NCursesMouseReader, show_cursor: true, pallet_file_name: "pallet.yml")
@@ -150,7 +130,7 @@ module ConsoleGraphics
         result =  event_check.check.call
         if result != nil
           event_happened = true
-          event = self.class::Event.new(event_check.type)
+          event = Event.new(event_check.type)
           event.method = nil
           event.data = result
           send_event(event)
@@ -181,7 +161,7 @@ module ConsoleGraphics
       keys.compact!
       if !keys.empty?
         event_happened = true
-        event = self.class::Event.new
+        event = Event.new
         if keys[2] == "M".bytes.first
           event.type = :mouse
           event.method = keys[3]
@@ -211,6 +191,15 @@ module ConsoleGraphics
   end
 
   class NCursesKeyReader
+
+    # Should move to key processing class, outside of generic event class
+    SPECIAL_KEY_MAP = {
+      23361 => :up_arrow,
+      23362 => :down_arrow,
+      23363 => :right_arrow,
+      23364 => :left_arrow,
+    }
+
     def initialize
       setup
     end

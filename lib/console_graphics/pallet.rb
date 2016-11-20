@@ -1,6 +1,6 @@
 require 'yaml'
 
-module ConsoleGraphics
+class ConsoleGraphics
   class Pallet
     attr_accessor :pallet
 
@@ -8,9 +8,9 @@ module ConsoleGraphics
       @pallet.select{|k,v| v[:index] }.map{|k,v| [v[:index],v[:fg], v[:bg]] }.uniq
     end
 
-    def set_active_pallet
+    def set_active_pallet(pallet_class = FFI::NCurses)
       get_active_curses_pallet.each do |color_index_and_pair|
-        FFI::NCurses.init_pair(*color_index_and_pair)
+        pallet_class.init_pair(*color_index_and_pair)
       end
     end
 
