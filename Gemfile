@@ -1,4 +1,4 @@
-source 'https://rubygems.org/'
+source 'https://rubygems.org'
 
-gem 'ffi-ncurses'
-gem 'pry-byebug'
+# Specify your gem's dependencies in console_graphics.gemspec
+gemspec
