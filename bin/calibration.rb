@@ -32,6 +32,7 @@ app.on_event(:special_keys, "Generic ArrowKey Responder") { |event|
   app.clear_screen
   app.move_to_pos(0,0)
   event_string = event.to_yaml
+  app.remove_event_responder("Generic ArrowKey Responder")
   app.print_string(event_string)
 }
 
