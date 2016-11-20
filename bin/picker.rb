@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby -Iapp -Ilib
 require 'bundler/setup'
-require 'event_loop.rb'
+require 'console_graphics'
 
-app = EventLoop.new
+app = ConsoleGraphics::EventLoop.new
 start_time = Time.now
 last_coords = [0,0]
 

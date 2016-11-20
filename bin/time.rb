@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby -Iapp -Ilib
 require 'bundler/setup'
-require 'event_loop.rb'
+require 'console_graphics/event_loop.rb'
 require 'yaml'
 
-app = EventLoop.new(show_cursor: false)
-app.send_event(EventLoop::Event.new(:update_screen))
+app = ConsoleGraphics::EventLoop.new(show_cursor: false)
+app.send_event(ConsoleGraphics::EventLoop::Event.new(:update_screen))
 start_time = Time.now
 quit = false
 
@@ -42,7 +42,7 @@ app.on_event(:update_screen){ |event|
   app.move_to_pos(((app.window_width - time.to_s.length)  / 2), 0)
   app.print_string(event_string)
   app.move_to_pos(0,0)
-  app.send_event(EventLoop::Event.new(:redraw_screen))
+  app.send_event(ConsoleGraphics::EventLoop::Event.new(:redraw_screen))
 }
 
 app.on_event(:keyboard) { |event|

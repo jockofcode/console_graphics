@@ -1,9 +1,8 @@
 #!/usr/bin/env ruby -Iapp -Ilib
 
-require 'event_loop.rb'
-require 'yaml'
+require 'console_graphics'
 
-app = EventLoop.new(show_cursor: false)
+app = ConsoleGraphics::EventLoop.new(show_cursor: false)
 
 app.on_event(:keyboard) { |event|
   app.clear_screen

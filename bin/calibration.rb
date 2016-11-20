@@ -1,10 +1,11 @@
 #!/usr/bin/env ruby -Iapp -Ilib
 
 require 'bundler/setup'
-require 'event_loop.rb'
+require 'console_graphics'
+#require 'event_loop.rb'
 require 'yaml'
 
-app = EventLoop.new(show_cursor: false)
+app = ConsoleGraphics::EventLoop.new(show_cursor: false)
 def print_border(app)
   app.move_to_pos(0,0)
   app.print_string('#')
