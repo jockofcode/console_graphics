@@ -32,6 +32,7 @@ class ConsoleGraphics
       end
     end
 
+    # Maybe a better name is "event_injector"
     def on_event_trigger(event_type, &block)
       event = OpenStruct.new
       event.check = block
@@ -89,7 +90,7 @@ class ConsoleGraphics
 
     def run
       loop do
-        event_happened = check_for_event
+        event_happened = check_for_events
         local_events = @events.dup
         @events = []
         if event_happened
@@ -123,20 +124,29 @@ class ConsoleGraphics
       @events << event
     end
 
-    def check_for_event
+    def check_for_events
       event_happened = false
 
+      event_happened ||= check_for_keyboard_mouse_screen_event
       @event_checks.each{|event_check|
         result =  event_check.check.call
         if result != nil
-          event_happened = true
-          event = Event.new(event_check.type)
-          event.method = nil
-          event.data = result
+          if result.class != Event
+u           event_happened = true
+            event = Event.new(event_check.type)
+            event.method = nil
+            event.data = result
+          else
+            event = result
+          end
           send_event(event)
         end
       }
+      return event_happened
+    end
 
+    def check_for_keyboard_mouse_screen_event
+      event_happened = false
       keys = []
       keys << read_key_byte # If I get input from Curses.getch, it pauses on <esc>
       if keys.last == 27
@@ -180,9 +190,8 @@ class ConsoleGraphics
         end
         send_event(event)
       end
-      return event_happened
+      event_happened
     end
-
 
     def setup_pallet(pallet = Pallet.load_from_file("pallet.yml"))
       pallet.set_active_pallet
