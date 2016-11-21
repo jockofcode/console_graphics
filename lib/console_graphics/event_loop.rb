@@ -33,6 +33,7 @@ class ConsoleGraphics
     end
 
     # Maybe a better name is "event_injector"
+    # or even add_to_event_checks(event_type = nil, &block)
     def on_event_trigger(event_type, &block)
       event = OpenStruct.new
       event.check = block
@@ -107,7 +108,7 @@ class ConsoleGraphics
     end
 
     def read_key_byte
-      next_byte = @keyboard.getch 
+      next_byte = @keyboard.getch
       next_byte = nil if next_byte == -1
       if next_byte.class == Fixnum
       elsif next_byte.class == String
@@ -182,7 +183,7 @@ class ConsoleGraphics
           event.data.char = (ks = keys[1..2]; (ks[0] * 256) + ks[1])
         elsif keys[0] == 410
           event.type = :screen
-          current_screen_size = @display.screen_size  
+          current_screen_size = @display.screen_size
           event.data.size = current_screen_size.dup
         else
           event.type = :keyboard
