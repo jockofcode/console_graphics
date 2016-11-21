@@ -132,7 +132,7 @@ class ConsoleGraphics
         result =  event_check.check.call
         if result != nil
           if result.class != Event
-u           event_happened = true
+            event_happened = true
             event = Event.new(event_check.type)
             event.method = nil
             event.data = result
