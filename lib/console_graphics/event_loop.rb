@@ -27,7 +27,7 @@ class ConsoleGraphics
         @keyboard&.destroy
         @display&.destroy
         @mouse&.destroy
-        puts "Keyboard and Display reset back to normal"
+        puts "Keyboard and Display reset back to normal, was using version #{ConsoleGraphics::VERSION}"
         exit 0
       end
     end
