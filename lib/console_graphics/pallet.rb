@@ -1,4 +1,5 @@
 require 'yaml'
+require 'pry-byebug'
 
 class ConsoleGraphics
   class Pallet
@@ -70,7 +71,7 @@ class ConsoleGraphics
       elsif color.is_a?(Array)
         color_slots = find_slots_by_color_pair(*color)
       end
-      color_slots.each{|slot| slot.delete }
+      color_slots.each{|slot| @pallet.delete_if{|_k,v| v == slot } }
 
       return color_slots
     end
